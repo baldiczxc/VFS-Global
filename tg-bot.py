@@ -10,7 +10,7 @@ import logging
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 
-BOT_TOKEN = '7613202366:AAEKoYTOEkuXFYfUtyL4q8C6cGdLu-MmSN8'
+BOT_TOKEN = ''
 
 bot = Bot(token=BOT_TOKEN)
 dp = Dispatcher()
