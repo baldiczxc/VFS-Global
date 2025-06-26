@@ -12,7 +12,7 @@ from aiogram.fsm.state import State, StatesGroup
 
 from vfs_parser.monitoring import monitoring
 
-BOT_TOKEN = ''
+BOT_TOKEN = '7613202366:AAE_U9HXow0ZWIafukQDoJ5MqJoN22ZJS70'
 
 bot = Bot(token=BOT_TOKEN)
 dp = Dispatcher()
