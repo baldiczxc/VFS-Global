@@ -12,7 +12,7 @@ from aiogram.fsm.state import State, StatesGroup
 
 from vfs_parser.monitoring import monitoring
 
-BOT_TOKEN = '8115279492:AAEXqvfPuYQXMXQI3_bQIKTTkAagjJk03rE'
+BOT_TOKEN = '8115279492:AAFfR5DGxIduAH-IiwcCwKQ5CDSY0GuebqI'
 
 bot = Bot(token=BOT_TOKEN)
 dp = Dispatcher()
@@ -123,8 +123,30 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
+def log_active_user(user_id, username):
+    import sqlite3
+    import datetime
+    now = datetime.datetime.now()
+    date_str = now.strftime('%Y-%m-%d')
+    hour = int(now.strftime('%H'))
+    with sqlite3.connect('database.db') as conn:
+        # Проверяем, был ли уже лог за этот час для этого пользователя
+        exists = conn.execute(
+            "SELECT 1 FROM bookings WHERE user_id=? AND date=? AND hour=?",
+            (user_id, date_str, hour)
+        ).fetchone()
+        if not exists:
+            conn.execute(
+                '''INSERT INTO bookings (user_id, username, attempts, successful, booking_time, hour, date)
+                   VALUES (?, ?, ?, ?, ?, ?, ?)''',
+                (user_id, username, 1, 0, now.isoformat(), hour, date_str)
+            )
+            conn.commit()
+
+
 @dp.message(CommandStart())
 async def start(message: types.Message):
+    log_active_user(message.from_user.id, message.from_user.username)
     logger.info(f"/start от пользователя {message.from_user.id} (@{message.from_user.username})")
     # handle_start(message.from_user.id, f"@{message.from_user.username}")  # Запись пользователя в базу данных
     await message.answer("🤖 VFS Booking Bot", reply_markup=main_menu())
@@ -132,6 +154,7 @@ async def start(message: types.Message):
 
 @dp.callback_query(F.data == "back")
 async def go_back(callback: types.CallbackQuery, state: FSMContext):
+    log_active_user(callback.from_user.id, callback.from_user.username)
     logger.info(f"Пользователь {callback.from_user.id} нажал 'Назад'")
     await state.clear()
     await callback.message.edit_text("🤖 VFS Booking Bot", reply_markup=main_menu())
@@ -140,6 +163,7 @@ async def go_back(callback: types.CallbackQuery, state: FSMContext):
 
 @dp.callback_query(F.data == "register")
 async def register_start(callback: types.CallbackQuery, state: FSMContext):
+    log_active_user(callback.from_user.id, callback.from_user.username)
     logger.info(f"Пользователь {callback.from_user.id} начал регистрацию")
     await callback.message.edit_text(
         "Введите ваше имя и фамилию (как в паспорте):"
@@ -150,6 +174,7 @@ async def register_start(callback: types.CallbackQuery, state: FSMContext):
 
 @dp.message(Registration.waiting_for_fullname)
 async def reg_fullname(message: types.Message, state: FSMContext):
+    log_active_user(message.from_user.id, message.from_user.username)
     logger.info(f"Пользователь {message.from_user.id} ввёл ФИО: {message.text.strip()}")
     await state.update_data(fullname=message.text.strip())
     builder = InlineKeyboardBuilder()
@@ -163,6 +188,7 @@ async def reg_fullname(message: types.Message, state: FSMContext):
 
 @dp.callback_query(F.data.startswith("gender_"), Registration.waiting_for_gender)
 async def reg_gender(callback: types.CallbackQuery, state: FSMContext):
+    log_active_user(callback.from_user.id, callback.from_user.username)
     gender = callback.data.split("_")[1]
     logger.info(f"Пользователь {callback.from_user.id} выбрал пол: {gender}")
     await state.update_data(gender=gender)
@@ -173,6 +199,7 @@ async def reg_gender(callback: types.CallbackQuery, state: FSMContext):
 
 @dp.message(Registration.waiting_for_passport)
 async def reg_passport(message: types.Message, state: FSMContext):
+    log_active_user(message.from_user.id, message.from_user.username)
     logger.info(f"Пользователь {message.from_user.id} ввёл паспорт: {message.text.strip()}")
     await state.update_data(passport=message.text.strip())
     await message.answer("Введите дату выдачи паспорта (ДД.ММ.ГГГГ):")
@@ -181,6 +208,7 @@ async def reg_passport(message: types.Message, state: FSMContext):
 
 @dp.message(Registration.waiting_for_passport_date)
 async def reg_passport_date(message: types.Message, state: FSMContext):
+    log_active_user(message.from_user.id, message.from_user.username)
     logger.info(f"Пользователь {message.from_user.id} ввёл дату выдачи паспорта: {message.text.strip()}")
     await state.update_data(passport_date=message.text.strip())
     await message.answer("Введите вашу электронную почту:")
@@ -189,6 +217,7 @@ async def reg_passport_date(message: types.Message, state: FSMContext):
 
 @dp.message(Registration.waiting_for_email)
 async def reg_email(message: types.Message, state: FSMContext):
+    log_active_user(message.from_user.id, message.from_user.username)
     logger.info(f"Пользователь {message.from_user.id} ввёл email: {message.text.strip()}")
     await state.update_data(email=message.text.strip())
     await message.answer("Введите номер телефона полностью:")
@@ -197,6 +226,7 @@ async def reg_email(message: types.Message, state: FSMContext):
 
 @dp.message(Registration.waiting_for_phone)
 async def reg_phone(message: types.Message, state: FSMContext):
+    log_active_user(message.from_user.id, message.from_user.username)
     logger.info(f"Пользователь {message.from_user.id} ввёл телефон: {message.text.strip()}")
     await state.update_data(phone=message.text.strip())
     data = await state.get_data()
@@ -208,6 +238,7 @@ async def reg_phone(message: types.Message, state: FSMContext):
 
 @dp.callback_query(F.data == "verify")
 async def verify_start(callback: types.CallbackQuery):
+    log_active_user(callback.from_user.id, callback.from_user.username)
     logger.info(f"Пользователь {callback.from_user.id} выбрал верификацию")
     await callback.message.edit_text(
         "Для верификации перейдите по ссылке и выполните камеру-тест + биометрию:\nhttps://msivfs.com",
@@ -218,6 +249,7 @@ async def verify_start(callback: types.CallbackQuery):
 
 @dp.callback_query(F.data == "settings")
 async def settings_start(callback: types.CallbackQuery, state: FSMContext):
+    log_active_user(callback.from_user.id, callback.from_user.username)
     logger.info(f"Пользователь {callback.from_user.id} открыл настройки")
     builder = InlineKeyboardBuilder()
     for city_code, city_name in CITIES:
@@ -233,6 +265,7 @@ async def settings_start(callback: types.CallbackQuery, state: FSMContext):
 
 @dp.callback_query(F.data.startswith("city_"), SettingsFSM.waiting_for_city)
 async def choose_city(callback: types.CallbackQuery, state: FSMContext):
+    log_active_user(callback.from_user.id, callback.from_user.username)
     city_code = callback.data.split("_", 1)[1]
     logger.info(f"Пользователь {callback.from_user.id} выбрал город: {city_code}")
     await state.update_data(city=city_code)
@@ -250,6 +283,7 @@ async def choose_city(callback: types.CallbackQuery, state: FSMContext):
 
 @dp.callback_query(F.data.startswith("cat_"), SettingsFSM.waiting_for_category)
 async def choose_category(callback: types.CallbackQuery, state: FSMContext):
+    log_active_user(callback.from_user.id, callback.from_user.username)
     cat_code = callback.data.split("_", 1)[1]
     logger.info(f"Пользователь {callback.from_user.id} выбрал категорию визы: {cat_code}")
     await state.update_data(category=cat_code)
@@ -267,6 +301,7 @@ async def choose_category(callback: types.CallbackQuery, state: FSMContext):
 
 @dp.callback_query(F.data.startswith("sub_"), SettingsFSM.waiting_for_subcategory)
 async def choose_subcategory(callback: types.CallbackQuery, state: FSMContext):
+    log_active_user(callback.from_user.id, callback.from_user.username)
     sub_code = callback.data.split("_", 1)[1]
     logger.info(f"Пользователь {callback.from_user.id} выбрал подкатегорию визы: {sub_code}")
     await state.update_data(subcategory=sub_code)
@@ -285,6 +320,7 @@ async def choose_subcategory(callback: types.CallbackQuery, state: FSMContext):
 
 @dp.callback_query(F.data == "monitoring")
 async def monitoring_start(callback: types.CallbackQuery):
+    log_active_user(callback.from_user.id, callback.from_user.username)
     user_id = callback.from_user.id
     logger.info(f"Пользователь {user_id} начал мониторинг слотов")
 

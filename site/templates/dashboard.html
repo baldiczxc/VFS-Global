@@ -34,17 +34,64 @@
                 <div class="card-body">
                     {% for s in statuses %}
                         <div>
-                            {{ s.name }}:
+                            {{ s.component }}:
                             <span class="badge {% if s.status == 'ONLINE' %}bg-success{% elif s.status == 'ROTATING' %}bg-warning text-dark{% else %}bg-secondary{% endif %}">
                                 {{ s.status }}
                             </span>
                         </div>
                     {% endfor %}
+                    <hr>
+                    <div>
+                        <strong>Бот:</strong>
+                        {% if bot_status %}
+                            <span class="badge {% if bot_status.status == 'ONLINE' %}bg-success{% elif bot_status.status == 'ROTATING' %}bg-warning text-dark{% else %}bg-secondary{% endif %}">
+                                {{ bot_status.status }}
+                            </span>
+                        {% else %}
+                            <span class="badge bg-secondary">Нет данных</span>
+                        {% endif %}
+                    </div>
+                    <div>
+                        <strong>Проверка метрик:</strong>
+                        {% if metrics_status %}
+                            <span class="badge {% if metrics_status.status == 'ONLINE' %}bg-success{% elif metrics_status.status == 'ROTATING' %}bg-warning text-dark{% else %}bg-secondary{% endif %}">
+                                {{ metrics_status.status }}
+                            </span>
+                        {% else %}
+                            <span class="badge bg-secondary">Нет данных</span>
+                        {% endif %}
+                    </div>
                 </div>
             </div>
         </div>
     </div>
     <div class="row g-3 mt-2">
+        <div class="col-md-4">
+            <div class="card mb-3">
+                <div class="card-header fw-bold">Всего пользователей</div>
+                <div class="card-body">
+                    <div class="fs-3 text-primary">{{ total_users }}</div>
+                    <div>Пользователей за всё время</div>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-header fw-bold">Активные пользователи</div>
+                <div class="card-body">
+                    <h3>Пользователи за сегодня:</h3>
+                    <ul>
+                    {% for user in active_users %}
+                       <li>
+                         {% if user.username %}
+                           {{ user.username }} (ID: {{ user.user_id }})
+                         {% else %}
+                           ID: {{ user.user_id }}
+                         {% endif %}
+                       </li>
+                    {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        </div>
         <div class="col-md-8">
             <div class="card">
                 <div class="card-header fw-bold">Ключевые показатели (KPI)</div>
@@ -58,26 +105,13 @@
                         <div>Средняя реакция</div>
                     </div>
                     <div class="p-2 bg-light border rounded flex-fill text-center">
-                        <div class="fs-4 text-info">{{ kpi.uptime }}%</div>
-                        <div>Время работы</div>
+                        <div class="fs-4 text-info">{{ kpi.uptime }}</div>
+                        <div>Время работы бота (часы)</div>
                     </div>
                     <div class="p-2 bg-light border rounded flex-fill text-center">
                         <div class="fs-4 text-dark">{{ kpi.records_per_day }}</div>
                         <div>Записей за сутки</div>
                     </div>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="card">
-                <div class="card-header fw-bold">Активные пользователи</div>
-                <div class="card-body">
-                    <h3>Пользователи за сегодня:</h3>
-                    <ul>
-                    {% for user in active_users %}
-                       <li>{{ user.username }}</li>
-                    {% endfor %}
-                    </ul>
                 </div>
             </div>
         </div>

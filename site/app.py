@@ -58,15 +58,32 @@ def dashboard():
 
     # Get system statuses
     statuses = db.execute('SELECT * FROM system_status').fetchall()
-    
+
+    # Новый блок: определяем статусы бота и проверки метрик
+    bot_status = next((s for s in statuses if s['component'].lower() in ['бот', 'bot']), None)
+    metrics_status = next((s for s in statuses if s['component'].lower() in ['проверка метрик', 'metrics check', 'метрики']), None)
+
     # Calculate KPIs
     total_attempts = db.execute('SELECT SUM(attempts) FROM bookings').fetchone()[0] or 0
     total_successful = db.execute('SELECT SUM(successful) FROM bookings').fetchone()[0] or 0
-    
+
+    # Новый расчет времени работы (uptime) в часах
+    first = db.execute('SELECT MIN(booking_time) FROM bookings').fetchone()[0]
+    last = db.execute('SELECT MAX(booking_time) FROM bookings').fetchone()[0]
+    if first and last:
+        from datetime import datetime
+        fmt = "%Y-%m-%d %H:%M:%S"
+        # sqlite может возвращать с микросекундами, обрежем
+        first_dt = datetime.fromisoformat(first.split('.')[0])
+        last_dt = datetime.fromisoformat(last.split('.')[0])
+        uptime_hours = round((last_dt - first_dt).total_seconds() / 3600, 1)
+    else:
+        uptime_hours = 0
+
     kpi = {
         'success_rate': round((total_successful / total_attempts * 100) if total_attempts > 0 else 0, 1),
         'avg_response': round(realtime.get('slots_checked', 0) / 100, 1) if realtime.get('slots_checked', 0) > 0 else 0,
-        'uptime': 99.9,  # This could be calculated based on actual system uptime
+        'uptime': uptime_hours,  # Время работы бота в часах
         'records_per_day': total_successful
     }
 
@@ -79,11 +96,24 @@ def dashboard():
     ''').fetchall()
 
     # Активные пользователи за сегодня
+    # Было:
+    # active_users = db.execute('''
+    #     SELECT DISTINCT username FROM bookings WHERE username IS NOT NULL AND date = DATE('now')
+    # ''').fetchall()
+    # Исправляем подсчет активных пользователей за сегодня:
     active_users = db.execute('''
-        SELECT DISTINCT username FROM bookings WHERE username IS NOT NULL AND date = DATE('now')
+        SELECT DISTINCT user_id, username
+        FROM bookings
+        WHERE date = DATE('now')
+          AND (username IS NOT NULL OR user_id IS NOT NULL)
     ''').fetchall()
-    # Исправляем подсчет активных пользователей за сегодня
+    # Теперь realtime['active_users'] — это количество уникальных пользователей, совершивших действие в боте за сегодня
     realtime['active_users'] = len(active_users)
+
+    # Количество всех уникальных пользователей за все время
+    total_users = db.execute('''
+        SELECT COUNT(DISTINCT user_id) FROM bookings WHERE user_id IS NOT NULL
+    ''').fetchone()[0]
 
     # Группировка пользователей по дням для графика
     users_by_day = db.execute('''
@@ -105,7 +135,10 @@ def dashboard():
         kpi=kpi,
         bookings=bookings,
         active_users=active_users,
-        users_by_day=users_by_day
+        users_by_day=users_by_day,
+        bot_status=bot_status,
+        metrics_status=metrics_status,
+        total_users=total_users  # <-- добавляем сюда
     )
 
 if __name__ == '__main__':
