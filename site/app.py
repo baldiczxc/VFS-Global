@@ -111,15 +111,11 @@ def dashboard():
 if __name__ == '__main__':
     # Используем правильную БД для инициализации (создаём таблицы в database.db)
     import sqlite3
-    from database import init_db as metrics_init_db
-
-    # Инициализация metrics.db (vfs_metrics.db) для совместимости, если нужно
-    metrics_init_db()
+    from database import init_db as site_init_db
 
     # Инициализация основной БД (database.db) для сайта
     if not os.path.exists(DB_PATH):
         # Если database.db не существует, создаём таблицы
-        from init_db import init_db as site_init_db
         site_init_db()
     else:
         # Проверяем наличие таблиц, если файл уже есть
@@ -128,7 +124,6 @@ if __name__ == '__main__':
         # Проверяем таблицу metrics
         cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='metrics'")
         if not cursor.fetchone():
-            from init_db import init_db as site_init_db
             site_init_db()
         conn.close()
 

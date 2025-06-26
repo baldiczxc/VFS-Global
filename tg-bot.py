@@ -319,19 +319,21 @@ async def monitoring_start(callback: types.CallbackQuery):
 
 
 def update_metrics(slots=0, users=0, success=0, errors=0):
-    with sqlite3.connect('vfs_metrics.db') as conn:
+    with sqlite3.connect('database.db') as conn:
         conn.execute('''
             INSERT INTO metrics (slots_checked, active_users, successful_records, errors, last_updated)
             VALUES (?, ?, ?, ?, ?)
         ''', (slots, users, success, errors, datetime.datetime.now().isoformat()))
+        conn.commit()
 
 
 def update_status(component, status):
-    with sqlite3.connect('vfs_metrics.db') as conn:
+    with sqlite3.connect('database.db') as conn:
         conn.execute('''
             INSERT OR REPLACE INTO system_status (component, status, last_updated)
             VALUES (?, ?, ?)
         ''', (component, status, datetime.datetime.now().isoformat()))
+        conn.commit()
 
 
 # def handle_start(user_id, username):
