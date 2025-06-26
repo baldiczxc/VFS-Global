@@ -10,10 +10,13 @@ import logging
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 
-BOT_TOKEN = ''
+from vfs_parser.monitoring import monitoring
+
+BOT_TOKEN = '7613202366:AAEKoYTOEkuXFYfUtyL4q8C6cGdLu-MmSN8'
 
 bot = Bot(token=BOT_TOKEN)
 dp = Dispatcher()
+
 
 class Registration(StatesGroup):
     waiting_for_fullname = State()
@@ -22,6 +25,7 @@ class Registration(StatesGroup):
     waiting_for_passport_date = State()
     waiting_for_email = State()
     waiting_for_phone = State()
+
 
 # --- Категории и подкатегории визы ---
 VISA_CATEGORIES = {
@@ -82,10 +86,15 @@ CITIES = [
     ("mogilev", "Могилёв")
 ]
 
+active_monitorings = {}
+monitoring_flags = {}
+
+
 class SettingsFSM(StatesGroup):
     waiting_for_city = State()
     waiting_for_category = State()
     waiting_for_subcategory = State()
+
 
 def main_menu():
     builder = InlineKeyboardBuilder()
@@ -99,10 +108,12 @@ def main_menu():
     )
     return builder.as_markup()
 
+
 def back_button():
     builder = InlineKeyboardBuilder()
     builder.row(InlineKeyboardButton(text="⬅ Назад", callback_data="back"))
     return builder.as_markup()
+
 
 # Настройка логирования
 logging.basicConfig(
@@ -111,11 +122,13 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+
 @dp.message(CommandStart())
 async def start(message: types.Message):
     logger.info(f"/start от пользователя {message.from_user.id} (@{message.from_user.username})")
-    handle_start(message.from_user.id, f"@{message.from_user.username}")  # Запись пользователя в базу данных
+    # handle_start(message.from_user.id, f"@{message.from_user.username}")  # Запись пользователя в базу данных
     await message.answer("🤖 VFS Booking Bot", reply_markup=main_menu())
+
 
 @dp.callback_query(F.data == "back")
 async def go_back(callback: types.CallbackQuery, state: FSMContext):
@@ -123,6 +136,7 @@ async def go_back(callback: types.CallbackQuery, state: FSMContext):
     await state.clear()
     await callback.message.edit_text("🤖 VFS Booking Bot", reply_markup=main_menu())
     await callback.answer()
+
 
 @dp.callback_query(F.data == "register")
 async def register_start(callback: types.CallbackQuery, state: FSMContext):
@@ -132,6 +146,7 @@ async def register_start(callback: types.CallbackQuery, state: FSMContext):
     )
     await callback.answer()
     await state.set_state(Registration.waiting_for_fullname)
+
 
 @dp.message(Registration.waiting_for_fullname)
 async def reg_fullname(message: types.Message, state: FSMContext):
@@ -145,6 +160,7 @@ async def reg_fullname(message: types.Message, state: FSMContext):
     await message.answer("Выберите пол:", reply_markup=builder.as_markup())
     await state.set_state(Registration.waiting_for_gender)
 
+
 @dp.callback_query(F.data.startswith("gender_"), Registration.waiting_for_gender)
 async def reg_gender(callback: types.CallbackQuery, state: FSMContext):
     gender = callback.data.split("_")[1]
@@ -154,12 +170,14 @@ async def reg_gender(callback: types.CallbackQuery, state: FSMContext):
     await state.set_state(Registration.waiting_for_passport)
     await callback.answer()
 
+
 @dp.message(Registration.waiting_for_passport)
 async def reg_passport(message: types.Message, state: FSMContext):
     logger.info(f"Пользователь {message.from_user.id} ввёл паспорт: {message.text.strip()}")
     await state.update_data(passport=message.text.strip())
     await message.answer("Введите дату выдачи паспорта (ДД.ММ.ГГГГ):")
     await state.set_state(Registration.waiting_for_passport_date)
+
 
 @dp.message(Registration.waiting_for_passport_date)
 async def reg_passport_date(message: types.Message, state: FSMContext):
@@ -168,12 +186,14 @@ async def reg_passport_date(message: types.Message, state: FSMContext):
     await message.answer("Введите вашу электронную почту:")
     await state.set_state(Registration.waiting_for_email)
 
+
 @dp.message(Registration.waiting_for_email)
 async def reg_email(message: types.Message, state: FSMContext):
     logger.info(f"Пользователь {message.from_user.id} ввёл email: {message.text.strip()}")
     await state.update_data(email=message.text.strip())
     await message.answer("Введите номер телефона полностью:")
     await state.set_state(Registration.waiting_for_phone)
+
 
 @dp.message(Registration.waiting_for_phone)
 async def reg_phone(message: types.Message, state: FSMContext):
@@ -185,6 +205,7 @@ async def reg_phone(message: types.Message, state: FSMContext):
     await message.answer("Спасибо! Ваши данные сохранены.\nВозвращаемся в меню:", reply_markup=main_menu())
     await state.clear()
 
+
 @dp.callback_query(F.data == "verify")
 async def verify_start(callback: types.CallbackQuery):
     logger.info(f"Пользователь {callback.from_user.id} выбрал верификацию")
@@ -193,6 +214,7 @@ async def verify_start(callback: types.CallbackQuery):
         reply_markup=back_button()
     )
     await callback.answer()
+
 
 @dp.callback_query(F.data == "settings")
 async def settings_start(callback: types.CallbackQuery, state: FSMContext):
@@ -207,6 +229,7 @@ async def settings_start(callback: types.CallbackQuery, state: FSMContext):
     )
     await state.set_state(SettingsFSM.waiting_for_city)
     await callback.answer()
+
 
 @dp.callback_query(F.data.startswith("city_"), SettingsFSM.waiting_for_city)
 async def choose_city(callback: types.CallbackQuery, state: FSMContext):
@@ -224,6 +247,7 @@ async def choose_city(callback: types.CallbackQuery, state: FSMContext):
     await state.set_state(SettingsFSM.waiting_for_category)
     await callback.answer()
 
+
 @dp.callback_query(F.data.startswith("cat_"), SettingsFSM.waiting_for_category)
 async def choose_category(callback: types.CallbackQuery, state: FSMContext):
     cat_code = callback.data.split("_", 1)[1]
@@ -239,6 +263,7 @@ async def choose_category(callback: types.CallbackQuery, state: FSMContext):
     )
     await state.set_state(SettingsFSM.waiting_for_subcategory)
     await callback.answer()
+
 
 @dp.callback_query(F.data.startswith("sub_"), SettingsFSM.waiting_for_subcategory)
 async def choose_subcategory(callback: types.CallbackQuery, state: FSMContext):
@@ -257,16 +282,41 @@ async def choose_subcategory(callback: types.CallbackQuery, state: FSMContext):
     await state.clear()
     await callback.answer()
 
+
 @dp.callback_query(F.data == "monitoring")
 async def monitoring_start(callback: types.CallbackQuery):
-    logger.info(f"Пользователь {callback.from_user.id} начал мониторинг слотов")
-    update_metrics(slots=1, users=1)  # Increment metrics
-    update_status('Worker', 'ONLINE')  # Update system status
+    user_id = callback.from_user.id
+    logger.info(f"Пользователь {user_id} начал мониторинг слотов")
+
+    update_metrics(slots=1, users=1)
+    update_status('Worker', 'ONLINE')
+
     await callback.message.edit_text(
         "Поиск слотов запущен 24/7. Вы будете получать уведомления.",
         reply_markup=back_button()
     )
     await callback.answer()
+
+    if active_monitorings.get(user_id):
+        return
+
+    monitoring_flags[user_id] = True
+
+    async def background_monitoring():
+        while monitoring_flags.get(user_id, False):
+            logger.info(f"[Пользователь {user_id}] Запускаю monitoring...")
+            try:
+                loop = asyncio.get_event_loop()
+                await loop.run_in_executor(None, monitoring)  # синхронная функция в потоке
+            except Exception as e:
+                logger.error(f"[Пользователь {user_id}] Ошибка при выполнении monitoring(): {e}")
+
+            logger.info(f"[Пользователь {user_id}] Жду 7 минут...")
+            await asyncio.sleep(420)
+
+    task = asyncio.create_task(background_monitoring())
+    active_monitorings[user_id] = task
+
 
 def update_metrics(slots=0, users=0, success=0, errors=0):
     with sqlite3.connect('vfs_metrics.db') as conn:
@@ -275,6 +325,7 @@ def update_metrics(slots=0, users=0, success=0, errors=0):
             VALUES (?, ?, ?, ?, ?)
         ''', (slots, users, success, errors, datetime.datetime.now().isoformat()))
 
+
 def update_status(component, status):
     with sqlite3.connect('vfs_metrics.db') as conn:
         conn.execute('''
@@ -282,16 +333,17 @@ def update_status(component, status):
             VALUES (?, ?, ?)
         ''', (component, status, datetime.datetime.now().isoformat()))
 
-def handle_start(user_id, username):
-    conn = sqlite3.connect('database.db')
-    now = datetime.datetime.now().isoformat()
-    # Пример: добавляем пользователя как активного
-    conn.execute('''
-        INSERT INTO bookings (user_id, username, attempts, successful, booking_time, hour, date)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
-    ''', (user_id, username, 1, 1, now, now[11:13], now[:10]))
-    conn.commit()
-    conn.close()
+
+# def handle_start(user_id, username):
+#     conn = sqlite3.connect('database.db')
+#     now = datetime.datetime.now().isoformat()
+#     # Пример: добавляем пользователя как активного
+#     conn.execute('''
+#         INSERT INTO bookings (user_id, username, attempts, successful, booking_time, hour, date)
+#         VALUES (?, ?, ?, ?, ?, ?, ?)
+#     ''', (user_id, username, 1, 1, now, now[11:13], now[:10]))
+#     conn.commit()
+#     conn.close()
 
 async def main():
     # Initialize database
@@ -301,6 +353,7 @@ async def main():
     update_status('DB', 'ONLINE')
     update_status('Worker', 'ONLINE')
     await dp.start_polling(bot)
+
 
 if __name__ == "__main__":
     asyncio.run(main())
