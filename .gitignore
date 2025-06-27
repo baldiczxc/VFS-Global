@@ -5,3 +5,11 @@ vfs_parser/config/page/__pycache__/page.cpython-310.pyc
 vfs_parser/pages/__pycache__/check_dates_for_all_visa_types_for_one_city.cpython-310.pyc
 vfs_parser/utils/check_elements/__pycache__/is_cloudflare_bypass.cpython-310.pyc
 vfs_parser/utils/check_elements/__pycache__/is_loader_hide.cpython-310.pyc
+__pycache__/database.cpython-312.pyc
+
+vfs_parser/__pycache__/monitoring.cpython-312.pyc
+vfs_parser/config/page/__pycache__/page.cpython-312.pyc
+vfs_parser/pages/__pycache__/check_dates_for_all_visa_types_for_one_city.cpython-312.pyc
+vfs_parser/pages/__pycache__/login.cpython-312.pyc
+vfs_parser/utils/check_elements/__pycache__/is_cloudflare_bypass.cpython-312.pyc
+vfs_parser/utils/check_elements/__pycache__/is_loader_hide.cpython-312.pyc
