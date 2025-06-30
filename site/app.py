@@ -3,6 +3,7 @@ from prometheus_flask_exporter import PrometheusMetrics
 import sqlite3
 import os
 import sys
+import datetime
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
@@ -14,6 +15,21 @@ def get_db():
     db = sqlite3.connect(DB_PATH)
     db.row_factory = sqlite3.Row
     return db
+
+def log_error(error_message):
+    now = datetime.datetime.now()
+    with sqlite3.connect(DB_PATH) as conn:
+        conn.execute(
+            'UPDATE metrics SET errors = errors + 1, last_updated = ? WHERE id = (SELECT id FROM metrics ORDER BY last_updated DESC LIMIT 1)',
+            (now.isoformat(),)
+        )
+        conn.commit()
+    app.logger.error(f"Ошибка: {error_message}")
+
+@app.errorhandler(Exception)
+def handle_exception(e):
+    log_error(str(e))
+    return render_template("error.html", error=str(e)), 500
 
 @app.route('/')
 def index():

@@ -1,7 +1,20 @@
 import os
 import time
+import sqlite3
+import datetime
 
 from utils import is_loader_hide
+
+
+def log_error(error_message):
+    now = datetime.datetime.now()
+    with sqlite3.connect('database.db') as conn:
+        conn.execute(
+            'UPDATE metrics SET errors = errors + 1, last_updated = ? WHERE id = (SELECT id FROM metrics ORDER BY last_updated DESC LIMIT 1)',
+            (now.isoformat(),)
+        )
+        conn.commit()
+    print(f"Ошибка: {error_message}")
 
 
 def fill_form(page):
@@ -52,6 +65,6 @@ def fill_form(page):
             os.environ['your_email'])
         time.sleep(2)
         page.ele(button_submit_text_xpath).click()
-    except:
-        pass
-    # your logic for error handling or retrying can go here
+    except Exception as e:
+        log_error(str(e))
+        raise

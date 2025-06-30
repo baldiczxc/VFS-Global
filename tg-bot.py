@@ -144,6 +144,17 @@ def log_active_user(user_id, username):
             conn.commit()
 
 
+def log_error(error_message):
+    now = datetime.datetime.now()
+    with sqlite3.connect('database.db') as conn:
+        conn.execute(
+            'UPDATE metrics SET errors = errors + 1, last_updated = ? WHERE id = (SELECT id FROM metrics ORDER BY last_updated DESC LIMIT 1)',
+            (now.isoformat(),)
+        )
+        conn.commit()
+    logger.error(f"Ошибка: {error_message}")
+
+
 @dp.message(CommandStart())
 async def start(message: types.Message):
     log_active_user(message.from_user.id, message.from_user.username)
