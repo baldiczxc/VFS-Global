@@ -99,8 +99,7 @@ class SettingsFSM(StatesGroup):
 def main_menu():
     builder = InlineKeyboardBuilder()
     builder.row(
-        InlineKeyboardButton(text="📝 Регистрация", callback_data="register"),
-        InlineKeyboardButton(text="🔍 Верификация", callback_data="verify")
+        InlineKeyboardButton(text="📝 Регистрация", callback_data="register")
     )
     builder.row(
         InlineKeyboardButton(text="⚙ Настройки", callback_data="settings"),
@@ -130,7 +129,6 @@ def log_active_user(user_id, username):
     date_str = now.strftime('%Y-%m-%d')
     hour = int(now.strftime('%H'))
     with sqlite3.connect('database.db') as conn:
-        # Проверяем, был ли уже лог за этот час для этого пользователя
         exists = conn.execute(
             "SELECT 1 FROM bookings WHERE user_id=? AND date=? AND hour=?",
             (user_id, date_str, hour)
@@ -159,7 +157,6 @@ def log_error(error_message):
 async def start(message: types.Message):
     log_active_user(message.from_user.id, message.from_user.username)
     logger.info(f"/start от пользователя {message.from_user.id} (@{message.from_user.username})")
-    # handle_start(message.from_user.id, f"@{message.from_user.username}")  # Запись пользователя в базу данных
     await message.answer("🤖 VFS Booking Bot", reply_markup=main_menu())
 
 
@@ -242,20 +239,8 @@ async def reg_phone(message: types.Message, state: FSMContext):
     await state.update_data(phone=message.text.strip())
     data = await state.get_data()
     logger.info(f"Регистрация завершена для пользователя {message.from_user.id}: {data}")
-    # Здесь можно сохранить данные в базу, если нужно
     await message.answer("Спасибо! Ваши данные сохранены.\nВозвращаемся в меню:", reply_markup=main_menu())
     await state.clear()
-
-
-@dp.callback_query(F.data == "verify")
-async def verify_start(callback: types.CallbackQuery):
-    log_active_user(callback.from_user.id, callback.from_user.username)
-    logger.info(f"Пользователь {callback.from_user.id} выбрал верификацию")
-    await callback.message.edit_text(
-        "Для верификации перейдите по ссылке и выполните камеру-тест + биометрию:\nhttps://msivfs.com",
-        reply_markup=back_button()
-    )
-    await callback.answer()
 
 
 @dp.callback_query(F.data == "settings")
@@ -339,7 +324,7 @@ async def monitoring_start(callback: types.CallbackQuery):
     update_status('Worker', 'ONLINE')
 
     await callback.message.edit_text(
-        "Поиск слотов запущен 24/7. Вы будете получать уведомления.",
+        "Поиск слотов запущен 24/7. Вы будете получать уведомления. Можете вернуться в меню",
         reply_markup=back_button()
     )
     await callback.answer()
@@ -405,5 +390,4 @@ async def main():
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
     asyncio.run(main())
