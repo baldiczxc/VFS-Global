@@ -12,7 +12,7 @@ from aiogram.fsm.state import State, StatesGroup
 
 from vfs_parser.monitoring import monitoring
 
-BOT_TOKEN = ''
+BOT_TOKEN = '8115279492:AAFfR5DGxIduAH-IiwcCwKQ5CDSY0GuebqI'
 
 bot = Bot(token=BOT_TOKEN)
 dp = Dispatcher()
@@ -23,7 +23,6 @@ class Registration(StatesGroup):
     waiting_for_gender = State()
     waiting_for_passport = State()
     waiting_for_passport_date = State()
-    waiting_for_email = State()
     waiting_for_phone = State()
 
 
@@ -219,15 +218,6 @@ async def reg_passport_date(message: types.Message, state: FSMContext):
     log_active_user(message.from_user.id, message.from_user.username)
     logger.info(f"Пользователь {message.from_user.id} ввёл дату выдачи паспорта: {message.text.strip()}")
     await state.update_data(passport_date=message.text.strip())
-    await message.answer("Введите вашу электронную почту:")
-    await state.set_state(Registration.waiting_for_email)
-
-
-@dp.message(Registration.waiting_for_email)
-async def reg_email(message: types.Message, state: FSMContext):
-    log_active_user(message.from_user.id, message.from_user.username)
-    logger.info(f"Пользователь {message.from_user.id} ввёл email: {message.text.strip()}")
-    await state.update_data(email=message.text.strip())
     await message.answer("Введите номер телефона полностью:")
     await state.set_state(Registration.waiting_for_phone)
 

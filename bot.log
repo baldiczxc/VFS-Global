@@ -1,0 +1,19 @@
+nohup: ignoring input
+2025-07-01 14:29:42,596 [INFO] aiogram.dispatcher: Start polling
+2025-07-01 14:29:42,692 [INFO] aiogram.dispatcher: Run polling for bot @VFSGlobalHelperbot id=8115279492 - 'VFS-Global'
+2025-07-01 14:29:49,544 [INFO] __main__: Пользователь 7450163818 нажал 'Назад'
+2025-07-01 14:29:49,803 [INFO] aiogram.event: Update id=858362902 is handled. Duration 260 ms by bot id=8115279492
+2025-07-01 14:29:50,960 [INFO] __main__: Пользователь 7450163818 начал мониторинг слотов
+2025-07-01 14:29:51,097 [INFO] aiogram.event: Update id=858362903 is handled. Duration 139 ms by bot id=8115279492
+2025-07-01 14:29:51,097 [INFO] __main__: [Пользователь 7450163818] Запускаю monitoring...
+2025-07-01 14:29:51,371 [ERROR] root: Ошибка: 
+The browser executable file path cannot be found. Please configure it manually.
+Version: 4.1.0.18
+2025-07-01 14:29:51,372 [ERROR] __main__: [Пользователь 7450163818] Ошибка при выполнении monitoring(): 
+The browser executable file path cannot be found. Please configure it manually.
+Version: 4.1.0.18
+2025-07-01 14:29:51,372 [INFO] __main__: [Пользователь 7450163818] Жду 7 минут...
+2025-07-01 14:31:50,393 [INFO] __main__: Пользователь 7450163818 нажал 'Назад'
+2025-07-01 14:31:50,467 [INFO] aiogram.event: Update id=858362904 is handled. Duration 77 ms by bot id=8115279492
+2025-07-01 14:31:56,253 [INFO] __main__: Пользователь 7450163818 начал мониторинг слотов
+2025-07-01 14:31:56,565 [INFO] aiogram.event: Update id=858362905 is handled. Duration 313 ms by bot id=8115279492
